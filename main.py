@@ -6,16 +6,11 @@ import discord
 from discord.ext import commands
 
 # ================== CONFIG TOKEN ==================
-# Cara aman: pakai Secret DISCORD_BOT_TOKEN
 TOKEN = os.getenv("DISCORD_BOT_TOKEN")
-if not TOKEN:
-    # fallback: bisa langsung isi token di sini (kurang aman)
-    TOKEN = "MASUKKAN_TOKEN_DISCORD_KAMU_DI_SINI"
 
-    if TOKEN == "MASUKKAN_TOKEN_DISCORD_KAMU_DI_SINI":
-        raise RuntimeError(
-            "Token belum diisi. Set DISCORD_BOT_TOKEN di Secrets atau edit main.py."
-        )
+if not TOKEN:
+    raise RuntimeError("Token belum diisi. Set DISCORD_BOT_TOKEN di environment variables.")
+
 
 # ================== INTENTS ==================
 intents = discord.Intents.default()
