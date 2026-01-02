@@ -1,3 +1,4 @@
+import asyncio
 import os
 import re
 from urllib.parse import urlparse
@@ -96,6 +97,23 @@ def message_contains_bad_link(content: str) -> bool:
     return False
 
 
+def find_suspicious_domains(content: str) -> list[str]:
+    suspicious_domains: list[str] = []
+
+    for url in URL_REGEX.findall(content):
+        parsed = urlparse(url)
+        domain = normalize_domain(parsed.netloc)
+        if domain_is_suspicious(domain):
+            suspicious_domains.append(domain)
+
+    for match in PLAIN_DOMAIN_REGEX.findall(content):
+        domain = normalize_domain(match)
+        if domain_is_suspicious(domain):
+            suspicious_domains.append(domain)
+
+    return list(dict.fromkeys(suspicious_domains))
+
+
 @bot.event
 async def on_ready():
     print(f"Logged in as {bot.user} (ID: {bot.user.id})")
@@ -107,12 +125,22 @@ async def on_message(message: discord.Message):
     if message.author.bot:
         return
 
-    if message_contains_bad_link(message.content):
+    suspicious_domains = find_suspicious_domains(message.content)
+    if suspicious_domains:
         try:
             await message.delete()
             print(
                 f"Deleted message from {message.author} in #{message.channel} karena link scam."
             )
+            warning = await message.channel.send(
+                f"{message.author.mention} link mencurigakan diblokir: "
+                f"`{suspicious_domains[0]}`"
+            )
+            await asyncio.sleep(10)
+            try:
+                await warning.delete()
+            except (discord.Forbidden, discord.HTTPException):
+                print("Gagal hapus pesan peringatan.")
         except discord.Forbidden:
             print(
                 "Gagal hapus pesan: bot tidak punya permission Manage Messages."
